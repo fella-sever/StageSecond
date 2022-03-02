@@ -22,3 +22,17 @@ func Fibonacci(n int) int {
 	return sum
 
 }
+
+/*функция подсчитывает количество входных аргументов и их сумму*/
+func SumInt(a ...int) (int, int) {
+	var (
+		sum  int = 0
+		indx int = 0
+	)
+	for _, mass := range a {
+		sum += mass
+		indx++
+	}
+	//fmt.Println(indx, sum)
+	return indx, sum
+}
