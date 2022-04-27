@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"gopkg.in/yaml.v3"
 	"io/fs"
 	"io/ioutil"
@@ -17,12 +16,17 @@ import (
 
 var ipAddress = ""
 var iterationsNumber = ""
-var rootDir = ""
+var targetDir = ""
 var logFolder = ""
 var maxSize float64
+var flagNetworkCheck bool
 
+/*
+readConfig() reading some keys and values from config file named "recorder-file-handler.yaml"
+*/
 func readConfig() {
-	configYamlFile, readErr := ioutil.ReadFile("/home/jupyter" + "/" + "recorder-file-handler.yaml")
+	//configYamlFile, readErr := ioutil.ReadFile("/home/jupyter" + "/" + "recorder-file-handler.yaml")
+	configYamlFile, readErr := ioutil.ReadFile("recorder-file-handler.yaml")
 	if readErr != nil {
 		panic(readErr)
 	}
@@ -32,12 +36,12 @@ func readConfig() {
 	if unmarshErr != nil {
 		panic(unmarshErr)
 	}
-	fmt.Println(data)
 	ipAddress = data["ipAddress"]
 	iterationsNumber = data["iterationsNumber"]
-	rootDir = data["rootDir"]
+	targetDir = data["targetDir"]
 	logFolder = data["logFolder"]
 	maxSize, _ = strconv.ParseFloat(data["maxSize"], 64)
+	flagNetworkCheck, _ = strconv.ParseBool(data["flagNetworkCheck"])
 
 }
 
@@ -96,8 +100,8 @@ func checkinPrivateNetwork(iterationsNumber string, ipAddress string) {
 }
 
 /*
-counting size of all files situated in rootDir, returns size in Mibs in float64 val SizeCount and the
-oldest file in rootDir
+counting size of all files situated in targetDir, returns size in Mibs in float64 val SizeCount and the
+oldest file in targetDir
 */
 func dirSizeTheOldestFile(rootDir string) (float64, string) {
 	var sizeCount int64
@@ -135,7 +139,7 @@ function checks input size, compares with input val maxSize, if size > maxSize, 
 */
 func deletingOldFiles(maxSize float64, size float64, fileName string) {
 	if size > maxSize {
-		deleteOldFile := os.Remove(rootDir + "/" + fileName)
+		deleteOldFile := os.Remove(targetDir + "/" + fileName)
 		if deleteOldFile != nil {
 			logger(logFolder, "panic", "cannot remove file")
 		}
@@ -154,7 +158,7 @@ func main() {
 	for {
 		time.Sleep(5 * time.Second)
 		//определяем размер указанной в конфиге директории и самый старый файл в ней
-		size, name := dirSizeTheOldestFile(rootDir)
+		size, name := dirSizeTheOldestFile(targetDir)
 		//если размер директории превышает установленный пользователем в конфиге, то удаляется самый
 		//старый файл
 		deletingOldFiles(maxSize, size, name)
