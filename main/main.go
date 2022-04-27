@@ -9,30 +9,36 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strconv"
 	"time"
 )
 
 //добавить функцию, которая будет считывать это все говно из конфиг файла
-var ipAddress = "10.0.0.1"
-var iterationsNumber = "3"
-var rootDir = "/home/jupyter/testFolder"
-var logFolder = "/home/jupyter"
-var maxSize float64 = 200 // in Mib
+
+var ipAddress = ""
+var iterationsNumber = ""
+var rootDir = ""
+var logFolder = ""
+var maxSize float64
 
 func readConfig() {
-	configYamlFile, readErr := ioutil.ReadFile(logFolder + "/" + "recorder-file-handler.yaml")
+	configYamlFile, readErr := ioutil.ReadFile("/home/jupyter" + "/" + "recorder-file-handler.yaml")
 	if readErr != nil {
-		logger(logFolder, "panic", "can't open config file: "+fmt.Sprintf("%s", readErr))
+		panic(readErr)
 	}
-	data := make(map[interface{}]interface{})
+	data := make(map[string]string)
 
 	unmarshErr := yaml.Unmarshal(configYamlFile, &data)
 	if unmarshErr != nil {
-		logger(logFolder, "panic", "cannot unmarshall .yaml config!")
+		panic(unmarshErr)
 	}
 	fmt.Println(data)
-	fmt.Printf("%T, %T, %T, %T, %T", data["ipAddress"], data["iterationsNumber"], data["rootDir"],
-		data["logFolder"], data["maxSize"])
+	ipAddress = data["ipAddress"]
+	iterationsNumber = data["iterationsNumber"]
+	rootDir = data["rootDir"]
+	logFolder = data["logFolder"]
+	maxSize, _ = strconv.ParseFloat(data["maxSize"], 64)
+
 }
 
 /*
@@ -104,7 +110,7 @@ func dirSizeTheOldestFile(rootDir string) (float64, string) {
 
 	err := filepath.WalkDir(rootDir, func(path string, file fs.DirEntry, err error) error {
 		if err != nil {
-			logger(logFolder, "panic", "cannot parse dir")
+			panic(err)
 		}
 		size, _ := file.Info()
 		if !file.IsDir() {
@@ -139,14 +145,20 @@ func deletingOldFiles(maxSize float64, size float64, fileName string) {
 }
 
 func main() {
-	//defer logger(logFolder, "info", "session closed")
-	//logger(logFolder, "info", "session started")
+	//чтение параметров из конфиг-файла
 	readConfig()
-	/*for {
+	//начало сессии
+	defer logger(logFolder, "info", "session closed")
+	logger(logFolder, "info", "session started")
+
+	for {
 		time.Sleep(5 * time.Second)
+		//определяем размер указанной в конфиге директории и самый старый файл в ней
 		size, name := dirSizeTheOldestFile(rootDir)
+		//если размер директории превышает установленный пользователем в конфиге, то удаляется самый
+		//старый файл
 		deletingOldFiles(maxSize, size, name)
+		//проверка соединения к впн сети
 		checkinPrivateNetwork(iterationsNumber, ipAddress)
-		logger(logFolder, "info", "new loop!")
-	}*/
+	}
 }
