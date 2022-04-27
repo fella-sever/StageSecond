@@ -1,7 +1,10 @@
 package main
 
 import (
+	"fmt"
+	"gopkg.in/yaml.v3"
 	"io/fs"
+	"io/ioutil"
 	"log"
 	"os"
 	"os/exec"
@@ -15,6 +18,23 @@ var iterationsNumber = "3"
 var rootDir = "/home/jupyter/testFolder"
 var logFolder = "/home/jupyter"
 var maxSize float64 = 200 // in Mib
+
+func readConfig() {
+	configYamlFile, readErr := ioutil.ReadFile(logFolder + "/" + "recorder-file-handler.yaml")
+	if readErr != nil {
+		logger(logFolder, "panic", "can't open config file: "+fmt.Sprintf("%s", readErr))
+	}
+	data := make(map[interface{}]interface{})
+
+	unmarshErr := yaml.Unmarshal(configYamlFile, &data)
+	if unmarshErr != nil {
+		logger(logFolder, "panic", "cannot unmarshall .yaml config!")
+	}
+	fmt.Println(data)
+	fmt.Printf("%T, %T, %T, %T, %T", data["ipAddress"], data["iterationsNumber"], data["rootDir"],
+		data["logFolder"], data["maxSize"])
+}
+
 /*
 func for logging events. logFolder - folder CreateOpenWriteRead logfile, logLevel - "info", "panic",
 "fatal", logMessage - phrase'in'log
@@ -59,7 +79,7 @@ func checkinPrivateNetwork(iterationsNumber string, ipAddress string) {
 	cmd := exec.Command("ping", "-c "+iterationsNumber, ipAddress)
 	_, err := cmd.Output()
 	if err != nil {
-		logger(logFolder, "info", "rebooting")
+		logger(logFolder, "info", "no private network connection, rebooting device")
 		reboot := exec.Command("reboot")
 		err := reboot.Run()
 		if err != nil {
@@ -80,7 +100,7 @@ func dirSizeTheOldestFile(rootDir string) (float64, string) {
 	//будут сравниваться даты
 	//создания файлов
 	var dateFile = time.Date(3000, 1, 1, 0, 0, 0, 0, time.UTC)
-	var fileName string = ""
+	var fileName = ""
 
 	err := filepath.WalkDir(rootDir, func(path string, file fs.DirEntry, err error) error {
 		if err != nil {
@@ -119,10 +139,14 @@ func deletingOldFiles(maxSize float64, size float64, fileName string) {
 }
 
 func main() {
-	defer logger(logFolder, "info", "session closed")
-	logger(logFolder, "info", "session started")
-	size, name := dirSizeTheOldestFile(rootDir)
-	deletingOldFiles(maxSize, size, name)
-	checkinPrivateNetwork(iterationsNumber, ipAddress)
-
+	//defer logger(logFolder, "info", "session closed")
+	//logger(logFolder, "info", "session started")
+	readConfig()
+	/*for {
+		time.Sleep(5 * time.Second)
+		size, name := dirSizeTheOldestFile(rootDir)
+		deletingOldFiles(maxSize, size, name)
+		checkinPrivateNetwork(iterationsNumber, ipAddress)
+		logger(logFolder, "info", "new loop!")
+	}*/
 }
