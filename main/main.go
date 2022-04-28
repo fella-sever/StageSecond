@@ -12,36 +12,52 @@ import (
 	"time"
 )
 
-//добавить функцию, которая будет считывать это все говно из конфиг файла
-
-var ipAddress = ""
-var iterationsNumber = ""
-var targetDir = ""
-var logFolder = ""
-var maxSize float64
-var flagNetworkCheck bool
+// vals for setting up parsed info
+var ipAddress = ""        // set addrr for pingmachine
+var iterationsNumber = "" // how many "ping -c"
+var targetDir = ""        //sets up control dir for tracking dir size and old files
+var logFolder = ""        //were'll be yr logs
+var maxSize float64       //max capacity of control dir in float for convenience work with return types
+var flagNetworkCheck bool //defines use networkchecker or not
 
 /*
 readConfig() reading some keys and values from config file named "recorder-file-handler.yaml"
 */
 func readConfig() {
-	//configYamlFile, readErr := ioutil.ReadFile("/home/jupyter" + "/" + "recorder-file-handler.yaml")
-	configYamlFile, readErr := ioutil.ReadFile("recorder-file-handler.yaml")
-	if readErr != nil {
-		panic(readErr)
+	configYamlFile, readConfErr := ioutil.ReadFile("recorder-file-handler.yaml")
+	if readConfErr != nil {
+		log.Printf("configFile: %v", readConfErr)
+		os.Exit(1)
 	}
-	data := make(map[string]string)
+	parsedConfig := make(map[string]string) //map for containing data parsed from config file
 
-	unmarshErr := yaml.Unmarshal(configYamlFile, &data)
-	if unmarshErr != nil {
-		panic(unmarshErr)
+	parseErr := yaml.Unmarshal(configYamlFile, &parsedConfig)
+	if parseErr != nil {
+		panic(parseErr)
 	}
-	ipAddress = data["ipAddress"]
-	iterationsNumber = data["iterationsNumber"]
-	targetDir = data["targetDir"]
-	logFolder = data["logFolder"]
-	maxSize, _ = strconv.ParseFloat(data["maxSize"], 64)
-	flagNetworkCheck, _ = strconv.ParseBool(data["flagNetworkCheck"])
+	ipAddress = parsedConfig["ipAddress"]
+	iterationsNumber = parsedConfig["iterationsNumber"]
+	targetDir = parsedConfig["targetDir"]
+	logFolder = parsedConfig["logFolder"]
+	maxSize, _ = strconv.ParseFloat(parsedConfig["maxSize"], 64)
+	flagNetworkCheck, _ = strconv.ParseBool(parsedConfig["flagNetworkCheck"])
+	/* default config set
+	# checking network section#
+	# if true - starts checking network, if false - starts without connection check
+	flagNetworkCheck: false
+	# ipAddress defines ip of network without port for checking network connection (based on unix ping)
+	ipAddress: 10.0.0.1
+	# iterationsNumber sets number of ping iterations of cheking ip address
+	iterationsNumber: "3"
+	# recorder section #
+	# directory in targetDir will be cheking out for it's size and possibly removing the oldest files
+	targetDir: /home/jupyter/testFolder
+	# max size of targetDir directory, if dir's size > maxSize, the oldest file in targetDir will be removed
+	maxSize: 250
+	# logging #
+	# directory for logfile storage
+	logFolder: /home/jupyter
+	*/
 
 }
 
@@ -81,22 +97,25 @@ func logger(logFolder string, logLevel string, logMessage string) {
 of check iterations determined by input var iterationsNumber. Connection's check provided by unix
 "ping". If private network is unavailable - func rebooting the linux device */
 
-func checkinPrivateNetwork(iterationsNumber string, ipAddress string) {
+func checkinPrivateNetwork(iterationsNumber string, ipAddress string, flagNetworkCheck bool) {
 	//я не нашел лучшего способа проверить интернет-соединение для приватной сети
 	//в которой закрыты порты, net.Dial работает только при указании порта,
 	// поэтому в этой ситуации его применять не получится, хотя, она работает на порядок быстрее,
 	// нежели обычный пинг
-	cmd := exec.Command("ping", "-c "+iterationsNumber, ipAddress)
-	_, err := cmd.Output()
-	if err != nil {
-		logger(logFolder, "info", "no private network connection, rebooting device")
-		reboot := exec.Command("reboot")
-		err := reboot.Run()
+	if flagNetworkCheck {
+		cmd := exec.Command("ping", "-c "+iterationsNumber, ipAddress)
+		_, err := cmd.Output()
 		if err != nil {
-			logger(logFolder, "panic", "no way to reboot!")
-			return
+			logger(logFolder, "info", "no private network connection, rebooting device")
+			reboot := exec.Command("reboot")
+			err := reboot.Run()
+			if err != nil {
+				logger(logFolder, "panic", "no way to reboot!")
+				return
+			}
 		}
 	}
+
 }
 
 /*
@@ -163,6 +182,6 @@ func main() {
 		//старый файл
 		deletingOldFiles(maxSize, size, name)
 		//проверка соединения к впн сети
-		checkinPrivateNetwork(iterationsNumber, ipAddress)
+		checkinPrivateNetwork(iterationsNumber, ipAddress, flagNetworkCheck)
 	}
 }

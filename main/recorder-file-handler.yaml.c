@@ -1,7 +1,7 @@
 # checking network section#
 
 # if true - starts checking network, if false - starts without connection check
-flagNetworkCheck: true
+flagNetworkCheck: false
 # ipAddress defines ip of network without port for checking network connection (based on unix ping)
 ipAddress: 10.0.0.1
 # iterationsNumber sets number of ping iterations of cheking ip address
