@@ -172,8 +172,11 @@ func main() {
 	//чтение параметров из конфиг-файла
 	readConfig()
 	//начало сессии
-	defer logger(logFolder, "info", "session closed")
-	logger(logFolder, "info", "session started")
+	logger(logFolder, "info", "session started with params: ")
+	logger(logFolder, "info", "-- check network: "+strconv.FormatBool(flagNetworkCheck))
+	logger(logFolder, "info", "-- target directory: "+targetDir)
+	logger(logFolder, "info", "-- max size of target dir: "+
+		strconv.FormatFloat(maxSize, 'f', -1, 64)+" Mib")
 
 	for {
 		time.Sleep(5 * time.Second)
