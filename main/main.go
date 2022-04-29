@@ -30,10 +30,11 @@ func readConfig() {
 		os.Exit(1)
 	}
 	parsedConfig := make(map[string]string) //map for containing data parsed from config file
-
+	// parsing all info from config file to map
 	parseErr := yaml.Unmarshal(configYamlFile, &parsedConfig)
 	if parseErr != nil {
-		panic(parseErr)
+		log.Printf("configFile: %v", parseErr)
+		os.Exit(1)
 	}
 	ipAddress = parsedConfig["ipAddress"]
 	iterationsNumber = parsedConfig["iterationsNumber"]
@@ -66,11 +67,12 @@ func for logging events. logFolder - folder CreateOpenWriteRead logfile, logLeve
 "fatal", logMessage - phrase'in'log
 */
 func logger(logFolder string, logLevel string, logMessage string) {
-	file, err := os.OpenFile(logFolder+"/"+"logfile.log", os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
+	// open/create/append to existing file
+	file, errFile := os.OpenFile(logFolder+"/"+"logfile.log", os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
+	if errFile != nil {
 
-	if err != nil {
-
-		log.Fatalf("error opening file: %v", err)
+		log.Printf("configFile: %v", errFile)
+		os.Exit(1)
 
 	}
 	log.SetOutput(file)
@@ -110,7 +112,7 @@ func checkinPrivateNetwork(iterationsNumber string, ipAddress string, flagNetwor
 			reboot := exec.Command("reboot")
 			err := reboot.Run()
 			if err != nil {
-				logger(logFolder, "panic", "no way to reboot!")
+				logger(logFolder, "info", "no way to reboot!")
 				return
 			}
 		}
@@ -124,13 +126,12 @@ oldest file in targetDir
 */
 func dirSizeTheOldestFile(rootDir string) (float64, string) {
 	var sizeCount int64
-	//пока не понял, как сделать без указания начального значения даты создания файла
-	//по умолчанию я ставлю заведомо бОльшую дату, с которой
-	//будут сравниваться даты
-	//создания файлов
+	// date for comparing date of files in dir. dateFile
+	// was defined obviously later than any datefile
+	// for right result
 	var dateFile = time.Date(3000, 1, 1, 0, 0, 0, 0, time.UTC)
 	var fileName = ""
-
+	// parsing dir definded in rooDir for its size and old files
 	err := filepath.WalkDir(rootDir, func(path string, file fs.DirEntry, err error) error {
 		if err != nil {
 			panic(err)
@@ -160,7 +161,7 @@ func deletingOldFiles(maxSize float64, size float64, fileName string) {
 	if size > maxSize {
 		deleteOldFile := os.Remove(targetDir + "/" + fileName)
 		if deleteOldFile != nil {
-			logger(logFolder, "panic", "cannot remove file")
+			logger(logFolder, "info", "cannot remove file")
 		}
 		//прикрутить лог с инфо и именем удаленного файла
 		logger(logFolder, "info", fileName+" was removed")
