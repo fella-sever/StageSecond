@@ -161,9 +161,8 @@ func deletingOldFiles(maxSize float64, size float64, fileName string) {
 	if size > maxSize {
 		deleteOldFile := os.Remove(targetDir + "/" + fileName)
 		if deleteOldFile != nil {
-			logger(logFolder, "info", "cannot remove file")
+			logger(logFolder, "panic", "cannot remove file")
 		}
-		//прикрутить лог с инфо и именем удаленного файла
 		logger(logFolder, "info", fileName+" was removed")
 	}
 }
