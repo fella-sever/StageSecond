@@ -28,7 +28,7 @@ func readConfig() {
 	var readConfErr error
 	configYamlFile, readConfErr = ioutil.ReadFile("recorder-file-handler.yaml")
 	if readConfErr != nil {
-		//log.Printf("trying another path to parse config file")
+		log.Printf("trying another path to parse config file")
 		configYamlFile, readConfErr = ioutil.ReadFile("/usr/local/etc/recorder-file-handler.yaml")
 		if readConfErr != nil {
 			log.Printf("configFile: %v", readConfErr)
@@ -174,16 +174,20 @@ func deletingOldFiles(maxSize float64, size float64, fileName string) {
 	}
 }
 
+func startProgram() {
+	logger(logFolder, "info", "--- SESSION STARTED WITH PARAMS: --- ")
+	logger(logFolder, "info", "-- check network: "+strconv.FormatBool(flagNetworkCheck))
+	logger(logFolder, "info", "-- target directory: "+targetDir)
+	logger(logFolder, "info", "-- max size of target dir: "+
+		strconv.FormatFloat(maxSize, 'f', -1, 64)+" Mib\n")
+
+}
+
 func main() {
 	//чтение параметров из конфиг-файла
 	readConfig()
 	//начало сессии
-	logger(logFolder, "info", "session started with params: ")
-	logger(logFolder, "info", "-- check network: "+strconv.FormatBool(flagNetworkCheck))
-	logger(logFolder, "info", "-- target directory: "+targetDir)
-	logger(logFolder, "info", "-- max size of target dir: "+
-		strconv.FormatFloat(maxSize, 'f', -1, 64)+" Mib")
-
+	startProgram()
 	for {
 		time.Sleep(5 * time.Second)
 		//определяем размер указанной в конфиге директории и самый старый файл в ней
