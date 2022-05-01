@@ -26,10 +26,10 @@ readConfig() reading some keys and values from config file named "recorder-file-
 func readConfig() {
 	var configYamlFile []byte
 	var readConfErr error
-	configYamlFile, readConfErr = ioutil.ReadFile("recorder-file-handler.yaml")
+	configYamlFile, readConfErr = ioutil.ReadFile("reg-handler.yaml")
 	if readConfErr != nil {
 		log.Printf("trying another path to parse config file")
-		configYamlFile, readConfErr = ioutil.ReadFile("/usr/local/etc/recorder-file-handler.yaml")
+		configYamlFile, readConfErr = ioutil.ReadFile("/usr/local/etc/reg-handler.yaml")
 		if readConfErr != nil {
 			log.Printf("configFile: %v", readConfErr)
 			os.Exit(1)
@@ -75,7 +75,7 @@ func for logging events. logFolder - folder CreateOpenWriteRead logfile, logLeve
 */
 func logger(logFolder string, logLevel string, logMessage string) {
 	// open/create/append to existing file
-	file, errFile := os.OpenFile(logFolder+"/"+"logfile.log", os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
+	file, errFile := os.OpenFile(logFolder+"/"+"logRegHandler.log", os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
 	if errFile != nil {
 
 		log.Printf("configFile: %v", errFile)
@@ -176,9 +176,9 @@ func deletingOldFiles(maxSize float64, size float64, fileName string) {
 
 func startProgram() {
 	logger(logFolder, "info", "--- SESSION STARTED WITH PARAMS: --- ")
-	logger(logFolder, "info", "-- check network: "+strconv.FormatBool(flagNetworkCheck))
-	logger(logFolder, "info", "-- target directory: "+targetDir)
-	logger(logFolder, "info", "-- max size of target dir: "+
+	logger(logFolder, "info", "** check network: "+strconv.FormatBool(flagNetworkCheck))
+	logger(logFolder, "info", "** target directory: "+targetDir)
+	logger(logFolder, "info", "** max size of target dir: "+
 		strconv.FormatFloat(maxSize, 'f', -1, 64)+" Mib\n")
 
 }
