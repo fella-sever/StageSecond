@@ -24,7 +24,7 @@ var flagNetworkCheck bool //defines use networkchecker or not
 readConfig() reading some keys and values from config file named "recorder-file-handler.yaml"
 */
 func readConfig() {
-	configYamlFile, readConfErr := ioutil.ReadFile("recorder-file-handler.yaml")
+	configYamlFile, readConfErr := ioutil.ReadFile("/usr/local/etc/recorder-file-handler.yaml")
 	if readConfErr != nil {
 		log.Printf("configFile: %v", readConfErr)
 		os.Exit(1)
