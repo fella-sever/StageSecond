@@ -1,0 +1,8 @@
+[Unit]
+Wants=sys-devices-virtual-net-tun0.device
+After=sys-devices-virtual-net-tun0.device
+[Service]
+ExecStart =/usr/local/bin/reg-handler-linuxArm64
+[Install]
+WantedBy = multi-user.target
+
