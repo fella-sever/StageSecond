@@ -13,6 +13,7 @@ import (
 )
 
 // vals for setting up parsed info
+var localIpAddress = ""   //set local address for working with pi without private connection
 var ipAddress = ""        // set addrr for pingmachine
 var iterationsNumber = "" // how many "ping -c"
 var targetDir = ""        //sets up control dir for tracking dir size and old files
@@ -43,6 +44,7 @@ func readConfig() {
 		log.Printf("configFile: %v", parseErr)
 		os.Exit(1)
 	}
+	localIpAddress = parsedConfig["localIpAddress"]
 	ipAddress = parsedConfig["ipAddress"]
 	iterationsNumber = parsedConfig["iterationsNumber"]
 	targetDir = parsedConfig["targetDir"]
@@ -55,6 +57,8 @@ func readConfig() {
 	flagNetworkCheck: false
 	# ipAddress defines ip of network without port for checking network connection (based on unix ping)
 	ipAddress: 10.0.0.1
+	# local ip for setting up
+	localIpAddress: 192.168.1.1
 	# iterationsNumber sets number of ping iterations of cheking ip address
 	iterationsNumber: "3"
 	# recorder section #
@@ -112,16 +116,23 @@ func checkinPrivateNetwork(iterationsNumber string, ipAddress string, flagNetwor
 	// поэтому в этой ситуации его применять не получится, хотя, она работает на порядок быстрее,
 	// нежели обычный пинг
 	if flagNetworkCheck {
-		cmd := exec.Command("ping", "-c "+iterationsNumber, ipAddress)
-		_, err := cmd.Output()
-		if err != nil {
-			logger(logFolder, "info", "no private network connection, rebooting device")
-			reboot := exec.Command("reboot")
-			err := reboot.Run()
-			if err != nil {
-				logger(logFolder, "info", "no way to reboot!")
-				return
+		cmdForPrivate := exec.Command("ping", "-c "+iterationsNumber, ipAddress)
+		_, errPrivate := cmdForPrivate.Output()
+		if errPrivate != nil {
+			logger(logFolder, "info", "no private network connection, trying to "+
+				"ping local address")
+			ipAddress = localIpAddress
+			cmdForLocal := exec.Command("ping", "-c "+iterationsNumber, ipAddress)
+			_, errLocal := cmdForLocal.Output()
+			if errLocal != nil {
+				reboot := exec.Command("reboot")
+				err := reboot.Run()
+				if err != nil {
+					logger(logFolder, "info", "no way to reboot!")
+					return
+				}
 			}
+
 		}
 	}
 
