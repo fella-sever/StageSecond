@@ -5,7 +5,7 @@ flagNetworkCheck: true
 # ipAddress defines ip of network without port for checking network connection (based on unix ping)
 ipAddress: 10.0.0.1
 # local ip for setting up 
-localIpAddress: 127.0.0.1
+localIpAddress: 192.168.1.1
 # iterationsNumber sets number of ping iterations of cheking ip address
 iterationsNumber: "3"
 

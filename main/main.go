@@ -109,6 +109,7 @@ func logger(logFolder string, logLevel string, logMessage string) {
 /*checking availability of address of private network, determined by input var ipAddress, number
 of check iterations determined by input var iterationsNumber. Connection's check provided by unix
 "ping". If private network is unavailable - func rebooting the linux device */
+var checkFailCount int = 0
 
 func checkinPrivateNetwork(iterationsNumber string, ipAddress string, flagNetworkCheck bool) {
 	//я не нашел лучшего способа проверить интернет-соединение для приватной сети
@@ -119,17 +120,25 @@ func checkinPrivateNetwork(iterationsNumber string, ipAddress string, flagNetwor
 		cmdForPrivate := exec.Command("ping", "-c "+iterationsNumber, ipAddress)
 		_, errPrivate := cmdForPrivate.Output()
 		if errPrivate != nil {
-			logger(logFolder, "info", "no private network connection, trying to "+
-				"ping local address")
-			ipAddress = localIpAddress
-			cmdForLocal := exec.Command("ping", "-c "+iterationsNumber, ipAddress)
-			_, errLocal := cmdForLocal.Output()
-			if errLocal != nil {
-				reboot := exec.Command("reboot")
-				err := reboot.Run()
-				if err != nil {
-					logger(logFolder, "info", "no way to reboot!")
-					return
+			if checkFailCount < 3 {
+				checkFailCount += 1
+				logger(logFolder, "info", "no ping "+ipAddress+" try: "+strconv.Itoa(checkFailCount))
+			}
+			if checkFailCount == 3 {
+				ipAddress = localIpAddress // changing ip addresses
+				logger(logFolder, "info", "connect to local addr "+ipAddress)
+				cmdForLocal := exec.Command("ping", "-c "+iterationsNumber, ipAddress)
+				_, errLocal := cmdForLocal.Output()
+				checkFailCount = 0
+				if errLocal != nil {
+					checkFailCount = 0
+					logger(logFolder, "info", "no way to connect both networks, rebooting device")
+					reboot := exec.Command("reboot")
+					err := reboot.Run()
+					if err != nil {
+						logger(logFolder, "info", "no way to reboot!")
+						return
+					}
 				}
 			}
 
@@ -186,6 +195,7 @@ func deletingOldFiles(maxSize float64, size float64, fileName string) {
 }
 
 func startProgram() {
+
 	logger(logFolder, "info", "--- SESSION STARTED WITH PARAMS: --- ")
 	logger(logFolder, "info", "** check network: "+strconv.FormatBool(flagNetworkCheck))
 	logger(logFolder, "info", "** target directory: "+targetDir)
@@ -200,7 +210,7 @@ func main() {
 	//начало сессии
 	startProgram()
 	for {
-		time.Sleep(5 * time.Second)
+		time.Sleep(20 * time.Second)
 		//определяем размер указанной в конфиге директории и самый старый файл в ней
 		size, name := dirSizeTheOldestFile(targetDir)
 		//если размер директории превышает установленный пользователем в конфиге, то удаляется самый
